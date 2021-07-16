@@ -16,7 +16,6 @@ const config = {
 const client = new line.Client(config);
 
 // create Express app
-// about Express itself: https://expressjs.com/
 const app = express();
 
 // register a webhook handler with middleware
@@ -24,7 +23,7 @@ const app = express();
 app.post('/callback', line.middleware(config), (req, res) => {
   Promise
     .all(req.body.events.map(handleEvent))
-    .then((result) => res.json(result))
+    .then(result => res.json(result))
     .catch((err) => {
       console.error(err);
       res.status(500).end();
@@ -33,22 +32,25 @@ app.post('/callback', line.middleware(config), (req, res) => {
 
 // event handler
 function handleEvent(event) {
+  console.log('event: ', event.type);
   if (event.type !== 'message' || event.message.type !== 'text') {
     // ignore non-text-message event
-    const defaultMessage = `O.o?`;
-    const inputMessage = event.message.text;
-    const isAskingForLunch = helper.checkIfAskingForLunch(inputMessage);
-    const suggestion = helper.getRandomItem();
-
-    const replymsg = isAskingForLunch ? suggestion : defaultMessage;
-    return Promise.resolve(replymsg);
+    return Promise.resolve(null);
   }
 
-  // create a echoing text message
-  const echo = { type: 'text', text: event.message.text };
+  // create response message
+  const defaultMessage = `O.o?`;
+  const inputMessage = event.message.text;
+  const isAskingForLunch = helper.checkIfAskingForLunch(inputMessage);
+  const suggestion = helper.getRandomItem();
+
+  const replymsg = isAskingForLunch ? suggestion : defaultMessage;
 
   // use reply API
-  return client.replyMessage(event.replyToken, echo);
+  return client.replyMessage(event.replyToken, {
+    type: 'text',
+    text: replymsg
+  });
 }
 
 // listen on port
